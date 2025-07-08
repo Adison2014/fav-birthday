@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday, Sarah!</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom CSS for the Inter font and any overrides */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1a26; /* Darker, sleek futuristic background */
+            color: #e0e6ed; /* Lighter text for contrast */
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            line-height: 1.6; /* Improved readability */
+        }
+        /* Confetti animation */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f0f; /* Default color */
+            animation: fall linear forwards;
+            pointer-events: none; /* Allow clicks through confetti */
+            border-radius: 50%; /* Make confetti round */
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-10vh) rotateZ(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotateZ(720deg); opacity: 0.5; }
+        }
+
+        /* Animation for wishes */
+        .wish-text {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            color: #a2a5b3; /* Adjust color for dark background */
+        }
+        .wish-text.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Intro Screen Styles */
+        #introScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0d1a26; /* Match new body background */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001; /* Above all other content */
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+            text-align: center;
+            padding: 1rem;
+        }
+        #introScreen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none; /* Allow clicks to pass through when hidden */
+        }
+
+        /* Text Glow for Headings */
+        .glow-text {
+            text-shadow: 0 0 8px rgba(127, 255, 212, 0.8), /* Aqua glow */
+                         0 0 15px rgba(127, 255, 212, 0.6);
+            transition: text-shadow 0.3s ease-in-out;
+        }
+
+        /* Custom CSS for the animated border around the video */
+        @property --angle{
+            syntax: "<angle>";
+            initial-value: 0deg;
+            inherits: false;
+        }
+
+        .animated-video-border {
+            position: relative; /* Needed for pseudo-elements positioning */
+            padding: 4px; /* Space for the border itself */
+            border-radius: 1.75rem; /* Match or slightly exceed inner rounded-xl (0.75rem) or rounded-3xl (1.5rem) */
+            background-clip: padding-box; /* Crucial: Keeps background inside border */
+            background-color: transparent; /* Ensure content background doesn't interfere */
+            z-index: 0; /* Ensure it's behind content */
+            /* Add this if you want a shadow on the border container itself */
+            box-shadow: 0px 10px 30px -5px rgba(0,0,0,0.4);
+        }
+
+        .animated-video-border::before,
+        .animated-video-border::after {
+            content: '';
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            /* Conic gradient with your specified colors */
+            background-image: conic-gradient(from var(--angle), green, blue, purple, red, green);
+            top: 50%;
+            left: 50%;
+            translate: -50% -50%;
+            z-index: -1; /* Place behind the content */
+            padding: 3px; /* Creates the visible border width */
+            border-radius: 1.75rem; /* Match container border-radius */
+            animation: 3s spin linear infinite;
+        }
+
+        .animated-video-border::before {
+            filter: blur(1.5rem); /* Creates the glowing effect */
+            opacity: 1; /* Increased opacity for the visible color shadow/glow */
+        }
+
+        .animated-video-border::after {
+            /* Make the sharper border transparent */
+            opacity: 0;
+        }
+
+        @keyframes spin {
+            from {
+                --angle: 0deg;
+            }
+            to {
+                --angle: 360deg;
+            }
+        }
+
+        /* Fullscreen Video Container Styles */
+        #fullscreenVideoContainer {
+            position: fixed; /* Fixed to viewport */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0d1a26; /* Background when video is shown */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Above main content, below intro screen */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+            padding: 1rem; /* Padding for the video itself inside the fullscreen view */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        #fullscreenVideoContainer.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #fullscreenVideoContainer video {
+            width: 100%; /* Fill container width */
+            height: 100%; /* Fill container height */
+            object-fit: contain; /* IMPORTANT: 'contain' will show entire video, 'cover' will crop to fill */
+            border-radius: 1.5rem; /* Rounded corners for the video itself */
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5); /* Glowing shadow around the video */
+            max-width: 900px; /* Optional: Limit max width on very large screens */
+            max-height: 90vh; /* Optional: Limit max height to ensure controls are visible */
+        }
+
+        /* Close Video Button */
+        #closeVideoButton {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 1.5rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 1002; /* Above video and border */
+            transition: background-color 0.3s ease;
+        }
+
+        #closeVideoButton:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-4 md:p-8 lg:p-12">
+
+    <audio id="backgroundMusic" loop muted>
+        <source src="audio/forever_young.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <div id="introScreen">
+        <h1 class="text-5xl md:text-7xl lg:text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 leading-tight mb-8 animate-pulse glow-text">
+            Happy Birthday, Sarah! ❤️
+        </h1>
+        <p class="text-xl md:text-2xl text-gray-400 mb-12 max-w-2xl">
+            Click below to dive into a special celebration created just for you!
+        </p>
+        <button id="enterButton" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-8 rounded-full shadow-lg text-xl transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-pink-500 focus:ring-opacity-50">
+            🎉 Start the Celebration! 🎉
+        </button>
+    </div>
+
+    <div id="fullscreenVideoContainer" class="hidden">
+        <div class="animated-video-border w-full h-full max-w-full max-h-full flex justify-center items-center">
+            <video id="fullscreenBirthdayVideo" controls playsinline loop class="rounded-3xl shadow-lg" muted>
+                <source src="video/Sarah.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        <button id="closeVideoButton" aria-label="Close video">&#x2715;</button> </div>
+
+
+    <div id="mainContent" class="hidden w-full text-center flex flex-col min-h-[calc(100vh-2rem)] py-8 px-4 md:p-10 lg:p-16 relative justify-between">
+        <header class="mb-8 md:mb-12">
+            <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 leading-tight mb-4 animate-pulse glow-text">
+                Happy Birthday, <span id="friendName">Sarah</span>! ✨
+            </h1>
+            <p class="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto">
+                Wishing you a day overflowing with joy, laughter, and everything wonderful. This special dedication is just for you.
+            </p>
+        </header>
+
+        <div class="flex flex-col lg:flex-row lg:justify-center gap-8 md:gap-10 max-w-4xl mx-auto flex-grow">
+            <section class="mb-4 lg:mb-0 lg:w-full flex flex-col justify-center">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-200 mb-6 text-center glow-text">My Heartfelt Wishes for You</h2>
+                <div class="bg-blue-900 bg-opacity-30 p-6 md:p-8 rounded-2xl shadow-md text-center flex-grow flex flex-col items-center justify-center border border-blue-700">
+                    <p id="animatedWish" class="text-blue-200 italic text-xl md:text-2xl text-center wish-text"></p>
+                </div>
+                <button id="showVideoButton" class="mt-8 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full shadow-lg text-lg transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50">
+                    🎬 Show My Video!
+                </button>
+            </section>
+        </div>
+
+        <footer class="mt-8 text-gray-500 text-sm md:text-base">
+            <p>&copy; 2025 Created with ❤️ for Sarah ✨</p>
+        </footer>
+
+        </div>
+
+    <script>
+        // --- Configuration ---
+        const FRIEND_NAME = "Sarah";
+        const CONFETTI_COUNT = 100;
+        const CONFETTI_COLORS = ['#f0f', '#0ff', '#ff0', '#0f0', '#f00', '#00f', '#800080', '#ffa500'];
+
+        const WISHES = [
+            "Happy birthday. May your day be as bright and amazing as you are! Wishing you all the happiness in the world.",
+            "To the most incredible Sarah, happy birthday! May this new year of your life be filled with endless joy, laughter, and unforgettable moments. You deserve nothing but the best!",
+            "Cheers to another year of adventures and beautiful memories! Happy Birthday. May all your dreams come true.",
+            "Sending you the warmest birthday wishes! Hope your special day is as wonderful and unique as you are. Here's to many more years of friendship and fun!",
+            "Happy Birthday! May your day be sprinkled with love, joy, and all your favorite things. Thinking of you and celebrating you today!"
+        ];
+
+        // --- DOM Elements ---
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        // const muteToggleButton = document.getElementById('muteToggle'); // Removed this variable declaration
+        const enterButton = document.getElementById('enterButton');
+        const introScreen = document.getElementById('introScreen');
+        const mainContent = document.getElementById('mainContent');
+        const animatedWishElement = document.getElementById('animatedWish');
+        const showVideoButton = document.getElementById('showVideoButton');
+        
+        const fullscreenVideoContainer = document.getElementById('fullscreenVideoContainer');
+        const fullscreenBirthdayVideo = document.getElementById('fullscreenBirthdayVideo');
+        const closeVideoButton = document.getElementById('closeVideoButton');
+
+        let currentWishIndex = 0;
+        let confettiInterval;
+        let wishesInterval;
+
+        // A flag to keep track of background music state when video is shown
+        let wasBackgroundMusicPlaying = false;
+
+        // --- Functions ---
+
+        function createConfetti() {
+            const confetti = document.createElement('div');
+            confetti.classList.add('confetti');
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.backgroundColor = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+            confetti.style.animationDuration = (Math.random() * 2 + 3) + 's';
+            confetti.style.opacity = Math.random() * 0.5 + 0.5;
+            confetti.style.transform = `scale(${Math.random() * 0.8 + 0.2})`;
+            document.body.appendChild(confetti);
+            confetti.addEventListener('animationend', () => {
+                confetti.remove();
+            });
+        }
+
+        function createConfettiBurst() {
+            for (let i = 0; i < CONFETTI_COUNT; i++) {
+                createConfetti();
+            }
+        }
+
+        function displayNextWish() {
+            animatedWishElement.classList.remove('active');
+            setTimeout(() => {
+                currentWishIndex = (currentWishIndex + 1) % WISHES.length;
+                animatedWishElement.textContent = WISHES[currentWishIndex];
+                animatedWishElement.classList.add('active');
+            }, 500);
+        }
+
+        // Removed updateMuteButtonText() as the button is gone
+        // function updateMuteButtonText() {
+        //     if (backgroundMusic.muted && fullscreenBirthdayVideo.muted) {
+        //         muteToggleButton.textContent = '🔇 Muted';
+        //     } else {
+        //         muteToggleButton.textContent = '🔊 Music & Video';
+        //     }
+        // }
+
+        // --- Event Listeners ---
+
+        enterButton.addEventListener('click', () => {
+            // Unmute and play background music
+            backgroundMusic.muted = false;
+            backgroundMusic.play().then(() => {
+                console.log('Background audio playback started successfully.');
+                // updateMuteButtonText(); // Removed call
+            }).catch(error => {
+                console.error('Background audio playback error after interaction:', error);
+                // If autoplay fails, ensure the button shows correct state (muted)
+                // updateMuteButtonText(); // Removed call
+            });
+            
+            introScreen.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+
+            confettiInterval = setInterval(createConfettiBurst, 3000);
+            displayNextWish();
+            wishesInterval = setInterval(displayNextWish, 5000);
+        });
+
+        showVideoButton.addEventListener('click', () => {
+            // 1. Pause and Mute Background Music
+            if (!backgroundMusic.muted) {
+                wasBackgroundMusicPlaying = true; // Remember state
+                backgroundMusic.pause();
+                backgroundMusic.muted = true;
+            } else {
+                wasBackgroundMusicPlaying = false;
+            }
+            // updateMuteButtonText(); // Removed call
+
+            // 2. Show Video Container and Play Video Unmuted
+            fullscreenVideoContainer.classList.add('active');
+            fullscreenBirthdayVideo.muted = false; // Explicitly unmute video
+            fullscreenBirthdayVideo.play().then(() => {
+                console.log('Fullscreen video playback started successfully.');
+                // updateMuteButtonText(); // Removed call
+            }).catch(error => {
+                console.error('Fullscreen video playback error:', error);
+                // If autoplay fails, ensure the button shows correct state (muted)
+                // updateMuteButtonText(); // Removed call
+            });
+        });
+
+        closeVideoButton.addEventListener('click', () => {
+            // 1. Hide Video Container, Pause and Mute Video, Reset Time
+            fullscreenVideoContainer.classList.remove('active');
+            fullscreenBirthdayVideo.pause();
+            fullscreenBirthdayVideo.currentTime = 0;
+            fullscreenBirthdayVideo.muted = true; // Mute video when closed
+            // updateMuteButtonText(); // Removed call
+
+            // 2. Resume Background Music if it was playing before
+            if (wasBackgroundMusicPlaying) {
+                backgroundMusic.muted = false; // Unmute background music
+                backgroundMusic.play().then(() => {
+                    console.log('Background audio resumed successfully.');
+                    // updateMuteButtonText(); // Removed call
+                }).catch(error => {
+                    console.error('Background audio resume error:', error);
+                    // updateMuteButtonText(); // Removed call
+                });
+            }
+        });
+
+        // The entire muteToggleButton.addEventListener block has been removed
+        // muteToggleButton.addEventListener('click', () => {
+        //     if (fullscreenVideoContainer.classList.contains('active')) {
+        //         // If video is active, toggle video mute state
+        //         fullscreenBirthdayVideo.muted = !fullscreenBirthdayVideo.muted;
+        //         if (!fullscreenBirthdayVideo.muted) {
+        //             fullscreenBirthdayVideo.play();
+        //         } else {
+        //             fullscreenBirthdayVideo.pause(); // Pause if muted
+        //         }
+        //     } else {
+        //         // Otherwise, toggle background music mute state
+        //         backgroundMusic.muted = !backgroundMusic.muted;
+        //         if (!backgroundMusic.muted) {
+        //             backgroundMusic.play();
+        //         } else {
+        //             backgroundMusic.pause(); // Pause background music if explicitly muted
+        //         }
+        //     }
+        //     updateMuteButtonText();
+        // });
+
+        // Initial setup on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('friendName').textContent = FRIEND_NAME;
+            document.title = `Happy Birthday, ${FRIEND_NAME}`;
+            mainContent.classList.add('hidden');
+            fullscreenVideoContainer.classList.add('hidden');
+            
+            // Ensure both are muted initially and button text is correct
+            backgroundMusic.muted = true;
+            fullscreenBirthdayVideo.muted = true;
+            // updateMuteButtonText(); // Removed call
+        });
+    </script>
+</body>
+</html>
